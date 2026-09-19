@@ -1,0 +1,102 @@
+name: DVWA DevSecOps Security Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - NIRMAL
+  pull_request:
+    branches:
+      - main
+
+jobs:
+
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker compose build
+
+
+  sast:
+    name: SAST - Semgrep
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Install Semgrep
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install semgrep
+
+      - name: Run Semgrep
+        run: |
+          semgrep scan \
+            --config p/php \
+            --error \
+            vulnerabilities/sqli/source/low.php \
+            vulnerabilities/xss_r/source/low.php \
+            vulnerabilities/exec/source/low.php \
+            vulnerabilities/upload/source/low.php
+
+
+  sca:
+    name: SCA - Composer Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP and Composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer
+
+      - name: Audit dependencies
+        working-directory: vulnerabilities/api
+        run: composer audit --locked
+
+
+  secrets:
+    name: Secrets Scan - Gitleaks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+  container-scan:
+    name: Container Scan - Trivy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Build DVWA image
+        run: docker compose build
+
+      - name: Run Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/digininja/dvwa:latest
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+          ignore-unfixed: true

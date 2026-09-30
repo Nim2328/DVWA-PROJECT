@@ -1,3 +1,4 @@
+```yaml
 name: DVWA DevSecOps Security Pipeline
 
 on:
@@ -6,12 +7,16 @@ on:
       - main
       - NIRMAL
       - MALITH
+
   pull_request:
     branches:
       - main
 
 jobs:
 
+  # ==========================================
+  # BUILD
+  # ==========================================
   build:
     name: Build Application
     runs-on: ubuntu-latest
@@ -20,10 +25,13 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Build Docker image
-        run: docker compose build
+      - name: Build DVWA Docker image
+        run: docker build -t dvwa-security-scan .
 
 
+  # ==========================================
+  # SAST - SEMGREP
+  # ==========================================
   sast:
     name: SAST - Semgrep
     runs-on: ubuntu-latest
@@ -42,31 +50,34 @@ jobs:
           semgrep scan \
             --config p/php \
             --error \
-            vulnerabilities/sqli/source/low.php \
-            vulnerabilities/xss_r/source/low.php \
-            vulnerabilities/exec/source/low.php \
-            vulnerabilities/upload/source/low.php
+            vulnerabilities/
 
 
+  # ==========================================
+  # SCA - TRIVY FILESYSTEM
+  # ==========================================
   sca:
-    name: SCA - Composer Audit
+    name: SCA - Trivy Filesystem
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Setup PHP and Composer
-        uses: shivammathur/setup-php@v2
+      - name: Run Trivy filesystem vulnerability scan
+        uses: aquasecurity/trivy-action@master
         with:
-          php-version: '8.2'
-          tools: composer
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+          ignore-unfixed: true
 
-      - name: Audit dependencies
-        working-directory: vulnerabilities/api
-        run: composer audit --locked
 
-
+  # ==========================================
+  # SECRETS SCAN - GITLEAKS
+  # ==========================================
   secrets:
     name: Secrets Scan - Gitleaks
     runs-on: ubuntu-latest
@@ -83,6 +94,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
+  # ==========================================
+  # CONTAINER SCAN - TRIVY
+  # ==========================================
   container-scan:
     name: Container Scan - Trivy
     runs-on: ubuntu-latest
@@ -91,13 +105,16 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Build DVWA image
-        run: docker compose build
+      - name: Build DVWA Docker image
+        run: docker build -t dvwa-security-scan .
 
-      - name: Run Trivy vulnerability scan
+      - name: Run Trivy container vulnerability scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ghcr.io/digininja/dvwa:latest
+          image-ref: dvwa-security-scan
           severity: HIGH,CRITICAL
           exit-code: '1'
           ignore-unfixed: true
+```
+
+

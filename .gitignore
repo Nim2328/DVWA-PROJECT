@@ -1,0 +1,4 @@
+config/config.inc.php
+
+# Vim swap files
+.*swp

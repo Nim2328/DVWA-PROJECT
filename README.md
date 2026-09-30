@@ -1,25 +1,28 @@
-## SQL Injection Remediation
+## Command Injection Remediation
 
-The SQL Injection vulnerability in the DVWA SQL Injection module was remediated by modifying:
+The Command Injection vulnerability in the DVWA Command Injection module was remediated by modifying:
 
-`vulnerabilities/sqli/source/low.php`
+`vulnerabilities/exec/source/low.php`
 
 ### Changes Implemented
 
-The original implementation directly included user-controlled input in the SQL query. This allowed an attacker to manipulate the query using SQL injection payloads.
+The original implementation directly passed user-controlled input to an operating system command using `shell_exec()`. This allowed an attacker to inject and execute additional system commands.
 
 The following security controls were implemented:
 
-- Input validation using `FILTER_VALIDATE_INT`
-- Conversion of validated input to an integer
-- MySQL prepared statements using `mysqli_prepare()`
-- Parameter binding using `mysqli_stmt_bind_param()`
-- SQLite prepared statements with bound parameters
-- Safer database error handling
+- Strict IPv4 input validation using `FILTER_VALIDATE_IP`
+- Restriction to IPv4 addresses using `FILTER_FLAG_IPV4`
+- Rejection of invalid or malicious input
+- Shell argument escaping using `escapeshellarg()`
+- Operating-system-specific ping command handling
 
 ### Before
 
-The vulnerable implementation directly concatenated the user input into the SQL query:
+The vulnerable implementation directly concatenated the user input into the operating system command:
 
 ```php
-$query = "SELECT first_name, last_name FROM users WHERE user_id = '$id'";# DVWA-PROJECT
+$target = $_REQUEST['ip'] ?? '';
+
+$cmd = "ping -c 4 " . $target;
+
+$output = shell_exec($cmd);

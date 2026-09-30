@@ -6,7 +6,6 @@ on:
       - main
       - NIRMAL
       - DURUTHU
-      - test
   pull_request:
     branches:
       - main

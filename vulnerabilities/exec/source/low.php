@@ -16,7 +16,7 @@ if( isset( $_POST[ 'Submit' ]  ) ) {
             $cmd = shell_exec( 'ping -c 4 ' . $safe_target );
         }
 
-        echo "<pre>{$cmd}</pre>";
+        echo "<pre>" . htmlspecialchars( (string)$cmd, ENT_QUOTES, 'UTF-8' ) . "</pre>";
     } else {
         echo '<pre>Invalid target.</pre>';
     }

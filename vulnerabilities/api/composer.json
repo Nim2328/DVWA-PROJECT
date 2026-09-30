@@ -1,0 +1,5 @@
+{
+    "name": "dvwa/api",
+    "description": "DVWA API Module",
+    "require": {}
+}

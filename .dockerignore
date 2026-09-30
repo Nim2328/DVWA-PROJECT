@@ -1,0 +1,9 @@
+**/.git
+**/.gitignore
+**/.github
+**/Dockerfile*
+**/.dockerignore
+**/compose.yml
+
+# Local development environment
+**/.venv-sast

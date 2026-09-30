@@ -1,0 +1,31 @@
+# Neither the config file or its backup should go
+# into the repo.
+config/config.inc.php.bak
+config/config.inc.php
+
+# Vim swap files
+.*swp
+
+# VS Code editor files
+*.code-workspace
+
+# Used by pytest
+tests/__pycache__/
+
+# Don't include any uploaded images
+hackable/uploads/*
+.DS_Store
+
+# Local SAST environment and scan artifacts
+.venv-sast/
+semgrep-before.json
+semgrep-before.txt
+semgrep-after-*.json
+semgrep-after-*.txt
+*.bak
+
+# Local secrets scanning report
+gitleaks-report.json
+
+# Local environment secrets
+.env

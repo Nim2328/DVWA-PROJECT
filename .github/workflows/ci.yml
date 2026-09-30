@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - NIRMAL
+      - MALINTHA
   pull_request:
     branches:
       - main

@@ -1,16 +1,20 @@
-name: DVWA DevSecOps CI
+name: DVWA DevSecOps Security Pipeline
 
 on:
   push:
     branches:
-      - master
+      - main
+      - NIRMAL
+      - TEST
+
   pull_request:
     branches:
-      - master
+      - main
 
 jobs:
+
   build:
-    name: Build DVWA
+    name: Build Application
     runs-on: ubuntu-latest
 
     steps:
@@ -18,12 +22,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build Docker image
-        env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
-          MYSQL_USER: ${{ secrets.MYSQL_USER }}
-          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
         run: docker compose build
+
 
   sast:
     name: SAST - Semgrep
@@ -38,7 +38,7 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install semgrep
 
-      - name: Run SAST on remediated application code
+      - name: Run Semgrep
         run: |
           semgrep scan \
             --config p/php \
@@ -48,6 +48,7 @@ jobs:
             vulnerabilities/exec/source/low.php \
             vulnerabilities/upload/source/low.php
 
+
   sca:
     name: SCA - Composer Audit
     runs-on: ubuntu-latest
@@ -56,15 +57,16 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Setup PHP
+      - name: Setup PHP and Composer
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
           tools: composer
 
-      - name: Audit Composer dependencies
+      - name: Audit dependencies
         working-directory: vulnerabilities/api
         run: composer audit --locked
+
 
   secrets:
     name: Secrets Scan - Gitleaks
@@ -80,6 +82,7 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
   container-scan:
     name: Container Scan - Trivy
@@ -99,3 +102,4 @@ jobs:
           severity: HIGH,CRITICAL
           exit-code: '1'
           ignore-unfixed: true
+

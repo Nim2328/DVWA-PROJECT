@@ -187,3 +187,71 @@ Homepage: http://www.dvwa.co.uk/
 Project Home: https://github.com/ethicalhack3r/DVWA
 
 *Created by the DVWA team*
+
+## Reflected XSS Remediation
+
+The Reflected Cross-Site Scripting (XSS) vulnerability in the DVWA Reflected XSS module was remediated by modifying:
+
+`vulnerabilities/xss_r/source/low.php`
+
+### Changes Implemented
+
+The original implementation directly included user-controlled input from the URL in the HTML response. This allowed an attacker to inject malicious JavaScript code that could be executed by the victim's browser.
+
+The following security controls were implemented:
+
+- Output encoding using `htmlspecialchars()`
+- `ENT_QUOTES` enabled to encode both single and double quotes
+- `ENT_SUBSTITUTE` used to safely handle invalid character sequences
+- UTF-8 character encoding explicitly specified
+- User-controlled input is encoded before being included in the HTML response
+
+### Before
+
+The vulnerable implementation directly concatenated the user-controlled input into the HTML response:
+
+```php
+$html .= '<pre>Hello ' . $_GET[ 'name' ] . '</pre>';
+```
+
+An attacker could provide a payload such as:
+
+```text
+<script>alert(1)</script>
+```
+
+The browser interpreted the injected `<script>` element as JavaScript and executed it.
+
+### After
+
+The input is safely encoded before being included in the response:
+
+```php
+$name = htmlspecialchars(
+    $_GET[ 'name' ],
+    ENT_QUOTES | ENT_SUBSTITUTE,
+    'UTF-8'
+);
+
+$html .= '<pre>Hello ' . $name . '</pre>';
+```
+
+With this protection, HTML special characters are converted into safe HTML entities. Therefore, injected JavaScript is displayed as text instead of being executed by the browser.
+
+### Testing
+
+The vulnerability was tested before and after remediation using:
+
+```text
+<script>alert(1)</script>
+```
+
+**Before remediation:**  
+The JavaScript alert was executed, confirming the Reflected XSS vulnerability.
+
+**After remediation:**  
+The payload was displayed as text and the JavaScript was not executed, confirming that the vulnerability was successfully mitigated.
+
+### Security Benefit
+
+Output encoding prevents user-controlled data from being interpreted as executable HTML or JavaScript. This reduces the risk of attackers executing malicious scripts in a victim's browser through the Reflected XSS vulnerability.

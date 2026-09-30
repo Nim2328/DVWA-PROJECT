@@ -1,4 +1,4 @@
-cat << 'EOF' > README.md
+
 # Securing DVWA Through Secure Coding and DevSecOps Automation
 
 ## Project Overview
